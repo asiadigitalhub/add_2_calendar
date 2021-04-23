@@ -1,11 +1,11 @@
 /// Class that holds each event's info.
 class Event {
   String title, description, location;
-  String? timeZone;
+  String timeZone;
   DateTime startDate, endDate;
   bool allDay;
   //In iOS, you can set alert notification with duration. Ex. Duration(minutes:30) -> After30 min.
-  Duration? alarmInterval;
+  Duration alarmInterval;
 
   Event({
     required this.title,
