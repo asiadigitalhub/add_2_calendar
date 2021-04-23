@@ -132,7 +132,12 @@ extension SwiftAdd2CalendarPlugin: EKEventEditViewDelegate {
     public func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
         controller.dismiss(animated: true, completion: {
             UIApplication.shared.statusBarStyle = statusBarStyle
-            completionRoot?(true)
+            if (action ==  EKEventEditViewAction.saved){
+                completionRoot?(true)
+            }else{
+                completionRoot?(false)
+            }
+            
         })
     }
 }
