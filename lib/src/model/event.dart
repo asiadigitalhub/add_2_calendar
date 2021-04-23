@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Class that holds each event's info.
 class Event {
   String title, description, location;
@@ -8,11 +10,11 @@ class Event {
   Duration alarmInterval;
 
   Event({
-    required this.title,
+    @required this.title,
     this.description = '',
     this.location = '',
-    required this.startDate,
-    required this.endDate,
+    @required this.startDate,
+    @required this.endDate,
     this.alarmInterval,
     this.timeZone,
     this.allDay = false,
