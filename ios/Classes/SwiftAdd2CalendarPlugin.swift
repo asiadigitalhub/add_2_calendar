@@ -11,7 +11,7 @@ extension Date {
 }
 
 var statusBarStyle = UIApplication.shared.statusBarStyle
-
+var completionRoot: ((Bool) -> Void)?
 public class SwiftAdd2CalendarPlugin: NSObject, FlutterPlugin {
     
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -84,7 +84,8 @@ public class SwiftAdd2CalendarPlugin: NSObject, FlutterPlugin {
             OperationQueue.main.addOperation {
                 self.presentEventCalendarDetailModal(event: event, eventStore: eventStore)
             }
-            completion?(true)
+            completionRoot = completion
+           // completion?(true)
         case .notDetermined:
             //Auth is not determined
             //We should request access to the calendar
@@ -93,7 +94,7 @@ public class SwiftAdd2CalendarPlugin: NSObject, FlutterPlugin {
                     OperationQueue.main.addOperation {
                         self?.presentEventCalendarDetailModal(event: event, eventStore: eventStore)
                     }
-                    completion?(true)
+                    completionRoot = completion
                 } else {
                     // Auth denied
                     completion?(false)
@@ -131,7 +132,7 @@ extension SwiftAdd2CalendarPlugin: EKEventEditViewDelegate {
     public func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
         controller.dismiss(animated: true, completion: {
             UIApplication.shared.statusBarStyle = statusBarStyle
+            completionRoot?(true)
         })
     }
 }
-
