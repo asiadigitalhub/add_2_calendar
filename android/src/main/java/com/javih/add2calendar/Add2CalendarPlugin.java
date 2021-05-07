@@ -27,6 +27,10 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.CalendarContract;
 /**
  * Add2CalendarPlugin
  **/
@@ -131,29 +135,58 @@ public class Add2CalendarPlugin implements MethodCallHandler, FlutterPlugin, Act
     private void insertNoUI(String title, String desc, String loc, long start, long end, String timeZone, boolean allDay, Double alarm) {
         final int callbackId = 42;
 
-
-        boolean permissions = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) == PERMISSION_GRANTED;
+        boolean permissions = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) == PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PERMISSION_GRANTED;
 
         if (!permissions) {
-            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_CALENDAR}, callbackId);
+            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_CALENDAR,Manifest.permission.READ_CALENDAR}, callbackId);
             return;
         }
+
+        Context mContext = activity != null ? activity : context;
+        String projection[] = {"_id", "calendar_displayName"};
+        Uri calendars;
+        calendars = Uri.parse("content://com.android.calendar/calendars");
+
+        ContentResolver contentResolver = mContext.getContentResolver();
+//        Cursor managedCursor = contentResolver.query(calendars, projection, null, null, null);
+        String calID ="1";
+        Cursor calCursor = mContext.getContentResolver().query(CalendarContract.Calendars.CONTENT_URI, projection, CalendarContract.Calendars.VISIBLE + " = 1 AND "  + CalendarContract.Calendars.IS_PRIMARY + "=1", null, CalendarContract.Calendars._ID + " ASC");
+
+        if (calCursor.moveToFirst()){
+            String calName;
+
+            int cont= 0;
+            int nameCol = calCursor.getColumnIndex(projection[1]);
+            int idCol = calCursor.getColumnIndex(projection[0]);
+            do {
+                calName = calCursor.getString(nameCol);
+                calID = calCursor.getString(idCol);
+                if(calID != null && !calID.isEmpty()){
+                    break;
+                }
+                cont++;
+            } while(calCursor.moveToNext());
+            calCursor.close();
+        }
+
+
         TimeZone timeZone2 = TimeZone.getDefault();
 
         //  Calendar cal = Calendar.getInstance();
-        Context mContext = activity != null ? activity : context;
         Uri EVENTS_URI = CalendarContract.Events.CONTENT_URI; //Uri.parse(getCalendarUriBase(true) + "events");
         ContentResolver cr = mContext.getContentResolver();
 
         /** Inserting an event in calendar. */
         ContentValues values = new ContentValues();
-        values.put(CalendarContract.Events.CALENDAR_ID, 1);
+        values.put(CalendarContract.Events.CALENDAR_ID, Integer.parseInt(calID));
         values.put(CalendarContract.Events.TITLE, title);
         values.put(CalendarContract.Events.DESCRIPTION, desc);
-        values.put(CalendarContract.Events.ALL_DAY, allDay);
-        values.put(CalendarContract.Events.EVENT_LOCATION, loc);
+//        values.put(CalendarContract.Events.ALL_DAY, allDay);
+//        values.put(CalendarContract.Events.EVENT_LOCATION, loc);
         values.put(CalendarContract.Events.DTSTART, start);
         values.put(CalendarContract.Events.DTEND, end);
+        values.put(CalendarContract.Events.HAS_ALARM, 1);
         values.put(CalendarContract.Events.EVENT_TIMEZONE, timeZone != null ? timeZone :timeZone2.getID());
 
         Uri event = cr.insert(EVENTS_URI, values);
