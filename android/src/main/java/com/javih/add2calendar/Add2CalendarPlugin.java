@@ -92,7 +92,7 @@ public class Add2CalendarPlugin implements MethodCallHandler, FlutterPlugin, Act
     public void onMethodCall(MethodCall call, @NonNull Result result) {
         if (call.method.equals("add2Cal")) {
             try {
-                insert((String) call.argument("title"),
+                result.success(insert((String) call.argument("title"),
                         (String) call.argument("desc"),
                         (String) call.argument("location"),
                         (long) call.argument("startDate"),
@@ -100,8 +100,7 @@ public class Add2CalendarPlugin implements MethodCallHandler, FlutterPlugin, Act
                         (String) call.argument("timeZone"),
                         (boolean) call.argument("allDay"),
                         (Double) call.argument("alarmInterval"),
-                        (boolean) call.argument("noUI"));
-                result.success(true);
+                        (boolean) call.argument("noUI")));
             } catch (NullPointerException e) {
                 result.error("Exception occurred in Android code", e.getMessage(), false);
             }
@@ -110,10 +109,9 @@ public class Add2CalendarPlugin implements MethodCallHandler, FlutterPlugin, Act
         }
     }
 
-    private void insert(String title, String desc, String loc, long start, long end, String timeZone, boolean allDay, Double alarm, boolean noUI) {
+    private boolean insert(String title, String desc, String loc, long start, long end, String timeZone, boolean allDay, Double alarm, boolean noUI) {
         if (noUI) {
-            insertNoUI(title, desc, loc, start, end, timeZone, allDay, alarm);
-            return;
+            return insertNoUI(title, desc, loc, start, end, timeZone, allDay, alarm);
         }
         Context mContext = activity != null ? activity : context;
         Intent intent = new Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI);
@@ -127,12 +125,13 @@ public class Add2CalendarPlugin implements MethodCallHandler, FlutterPlugin, Act
         intent.putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, allDay);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         mContext.startActivity(intent);
+        return true;
     }
 
     /**
      * Adds Events and Reminders in Calendar.
      */
-    private void insertNoUI(String title, String desc, String loc, long start, long end, String timeZone, boolean allDay, Double alarm) {
+    private boolean insertNoUI(String title, String desc, String loc, long start, long end, String timeZone, boolean allDay, Double alarm) {
         final int callbackId = 42;
 
         boolean permissions = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) == PERMISSION_GRANTED &&
@@ -140,7 +139,7 @@ public class Add2CalendarPlugin implements MethodCallHandler, FlutterPlugin, Act
 
         if (!permissions) {
             ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.WRITE_CALENDAR,Manifest.permission.READ_CALENDAR}, callbackId);
-            return;
+            return false;
         }
 
         Context mContext = activity != null ? activity : context;
@@ -200,6 +199,7 @@ public class Add2CalendarPlugin implements MethodCallHandler, FlutterPlugin, Act
             values.put(CalendarContract.Reminders.MINUTES, alarm / 60);
             cr.insert(CalendarContract.Reminders.CONTENT_URI, values);
         }
+        return true;
     }
 
 }
